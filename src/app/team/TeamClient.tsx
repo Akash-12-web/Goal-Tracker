@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { approveGoals, saveGoal, saveCheckIn } from '../actions';
 
 export default function TeamClient({ currentUser, team, allData }: { currentUser: any, team: any[], allData: any }) {
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const router = useRouter();
 
   if (!selectedMember) {
     return (
@@ -36,6 +38,7 @@ export default function TeamClient({ currentUser, team, allData }: { currentUser
       await approveGoals(selectedMember.id, action);
       alert(`Goals ${action.toLowerCase()}d successfully.`);
       setSelectedMember(null); // Go back
+      router.refresh();
     } catch(err: any) {
       alert(err.message);
     }
@@ -84,6 +87,10 @@ function ManagerGoalCard({ goal, checkIns }: { goal: any, checkIns: any[] }) {
       }, goal.id);
       setEditing(false);
       alert('Goal updated.');
+      const router = (await import('next/navigation')).useRouter;
+      // This is a bit hacky in a nested component, let's just use window.location.reload() or pass router down.
+      // Actually window.location.reload() is robust.
+      window.location.reload();
     } catch (err: any) {
       alert(err.message);
     }
@@ -145,13 +152,14 @@ function ManagerGoalCard({ goal, checkIns }: { goal: any, checkIns: any[] }) {
                   <strong>{q} Check-in</strong>
                   <span className="badge badge-draft">{c.status}</span>
                 </div>
-                <div className="mb-2">
-                  <span className="text-secondary">Actual:</span> <strong>{c.actualAchievement}</strong>
+                <div className="mb-2 flex justify-between items-center">
+                  <div><span className="text-secondary">Actual:</span> <strong>{c.actualAchievement}</strong></div>
+                  <SentimentAnalyzer checkIn={c} />
                 </div>
                 {c.employeeComment && (
-                  <p className="text-sm text-secondary mb-2" style={{ fontStyle: 'italic' }}>
+                  <div className="text-sm text-secondary mb-4 p-3" style={{ fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', borderLeft: '3px solid var(--border)' }}>
                     "{c.employeeComment}"
-                  </p>
+                  </div>
                 )}
 
                 <ManagerCommentForm checkIn={c} />
@@ -178,6 +186,7 @@ function ManagerCommentForm({ checkIn }: { checkIn: any }) {
       });
       setEditing(false);
       alert('Feedback saved.');
+      window.location.reload();
     } catch (err: any) {
       alert(err.message);
     }
@@ -209,5 +218,43 @@ function ManagerCommentForm({ checkIn }: { checkIn: any }) {
         )}
       </div>
     </form>
+  );
+}
+
+function SentimentAnalyzer({ checkIn }: { checkIn: any }) {
+  const [sentiment, setSentiment] = useState<string | null>(checkIn.sentiment || null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const handleAnalyze = () => {
+    setAnalyzing(true);
+    setTimeout(async () => {
+      const text = checkIn.employeeComment || '';
+      let result = 'Neutral';
+      if (text.toLowerCase().includes('great') || text.toLowerCase().includes('happy') || text.toLowerCase().includes('exceeded') || text.toLowerCase().includes('success')) result = 'Positive';
+      if (text.toLowerCase().includes('hard') || text.toLowerCase().includes('failed') || text.toLowerCase().includes('blocked') || text.toLowerCase().includes('issue') || text.toLowerCase().includes('delay')) result = 'Negative';
+      
+      setSentiment(result);
+      setAnalyzing(false);
+      try {
+        await saveCheckIn({ ...checkIn, sentiment: result });
+      } catch(e) { console.error(e); }
+    }, 1500);
+  };
+
+  if (sentiment) {
+    const color = sentiment === 'Positive' ? 'var(--success)' : sentiment === 'Negative' ? 'var(--danger)' : 'var(--warning)';
+    return (
+      <span className="badge" style={{ backgroundColor: color, color: 'white', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        AI: {sentiment}
+      </span>
+    );
+  }
+
+  return (
+    <button onClick={handleAnalyze} className="btn btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', border: '1px solid var(--secondary-color)', color: 'var(--secondary-color)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      {analyzing ? 'Analyzing...' : 'Analyze Sentiment'}
+    </button>
   );
 }

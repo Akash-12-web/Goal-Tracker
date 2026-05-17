@@ -44,6 +44,14 @@ export default function AnalyticsClient({ users, allData, currentUser }: { users
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="card mb-4" style={{ padding: 0, overflow: 'hidden', height: '400px', position: 'relative' }}>
+         <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 10 }}>
+           <h3>Goal Constellation</h3>
+           <p className="text-secondary text-sm">Interactive view of company alignment</p>
+         </div>
+         <AtomGraph goals={allData.goals} users={users} />
+      </div>
+
       <div className="grid">
         <div className="card">
           <h3>Goal Distribution by Thrust Area</h3>
@@ -132,5 +140,75 @@ export default function AnalyticsClient({ users, allData, currentUser }: { users
         </div>
       )}
     </div>
+  );
+}
+
+function AtomGraph({ goals, users }: { goals: any[], users: any[] }) {
+  // A simple pseudo-random constellation generator using SVG
+  // Company Nucleus -> Thrust Areas -> Goals
+  
+  const width = 1000;
+  const height = 400;
+  const cx = width / 2;
+  const cy = height / 2;
+
+  const thrustAreas = ['Financial', 'Customer', 'Internal Process', 'Learning & Growth'];
+  
+  return (
+    <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid slice" style={{ background: 'transparent' }}>
+      {/* Grid background */}
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border)" strokeWidth="0.5" opacity="0.3"/>
+        </pattern>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+
+      {/* Center Nucleus */}
+      <circle cx={cx} cy={cy} r="60" fill="url(#glow)" />
+      <circle cx={cx} cy={cy} r="20" fill="var(--primary-color)" />
+      <text x={cx} y={cy + 40} fill="var(--text-primary)" fontSize="14" fontWeight="bold" textAnchor="middle">AtomQuest</text>
+
+      {/* Orbit Rings */}
+      <circle cx={cx} cy={cy} r="120" fill="none" stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" />
+      <circle cx={cx} cy={cy} r="250" fill="none" stroke="var(--border)" strokeWidth="1" strokeDasharray="2 6" opacity="0.5" />
+
+      {/* Thrust Areas (Inner Orbit) */}
+      {thrustAreas.map((area, i) => {
+        const angle = (i * Math.PI * 2) / thrustAreas.length;
+        const x = cx + Math.cos(angle) * 120;
+        const y = cy + Math.sin(angle) * 120;
+        
+        // Find goals for this area
+        const areaGoals = goals.filter(g => g.thrustArea === area);
+        
+        return (
+          <g key={area}>
+            <line x1={cx} y1={cy} x2={x} y2={y} stroke="var(--border)" strokeWidth="2" opacity="0.5" />
+            <circle cx={x} cy={y} r="10" fill="var(--secondary-color)" />
+            <text x={x} y={y - 15} fill="var(--text-secondary)" fontSize="12" textAnchor="middle" fontWeight="bold">{area}</text>
+            
+            {/* Goals (Outer Orbit) */}
+            {areaGoals.map((g, j) => {
+               const gAngle = angle - 0.5 + (j * 1.0) / Math.max(areaGoals.length - 1, 1);
+               const gx = cx + Math.cos(gAngle) * 250;
+               const gy = cy + Math.sin(gAngle) * 250;
+               const isCompleted = g.status === 'Approved'; // Just for visual
+               return (
+                 <g key={g.id}>
+                   <line x1={x} y1={y} x2={gx} y2={gy} stroke={isCompleted ? 'var(--success)' : 'var(--border)'} strokeWidth="1" opacity={isCompleted ? 0.8 : 0.4} />
+                   <circle cx={gx} cy={gy} r="6" fill={isCompleted ? 'var(--success)' : 'var(--background)'} stroke={isCompleted ? 'none' : 'var(--text-secondary)'} strokeWidth="2" />
+                   <text x={gx} y={gy + 15} fill="var(--text-primary)" fontSize="10" textAnchor="middle">{g.title.substring(0, 15)}...</text>
+                 </g>
+               )
+            })}
+          </g>
+        );
+      })}
+    </svg>
   );
 }

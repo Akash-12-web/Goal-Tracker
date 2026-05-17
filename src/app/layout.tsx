@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { getUsers } from "./actions";
 import ThemeToggle from "./ThemeToggle";
+import CommandPalette from "./CommandPalette";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,6 +27,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <CommandPalette />
         <header className="header">
           <div className="header-brand">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -57,7 +59,10 @@ export default async function RootLayout({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <ThemeToggle />
-            <span className="badge badge-approved">{currentUser.role}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: '1.2' }}>
+              <span className="badge badge-approved">{currentUser.role}</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--secondary-color)', fontWeight: 'bold' }}>⭐ {currentUser.xp || 0} XP (Lvl {Math.floor((currentUser.xp || 0) / 100) + 1})</span>
+            </div>
             <form action={async (formData) => {
               'use server';
               const newUserId = formData.get('userId') as string;

@@ -34,8 +34,8 @@
       "description": "Boost sales by 1000 units.",
       "uom": "%",
       "target": "1000",
-      "weightage": 100,
-      "status": "Draft",
+      "weightage": 40,
+      "status": "Approved",
       "isShared": false
     },
     {
@@ -47,20 +47,8 @@
       "uom": "%",
       "target": "10%",
       "weightage": 10,
-      "status": "Draft",
+      "status": "Approved",
       "isShared": true
-    },
-    {
-      "id": "1c7df4c5-5745-4faf-8477-5af0010c343d",
-      "employeeId": "u1",
-      "thrustArea": "Financial",
-      "title": "Q4 Sales",
-      "description": "Increase sales by 20%",
-      "uom": "%",
-      "target": "2000",
-      "weightage": 100,
-      "status": "Draft",
-      "isShared": false
     },
     {
       "id": "f3876f1a-7f3d-45b4-a3e8-cbbdda8b3cc8",
@@ -71,8 +59,37 @@
       "uom": "Numeric",
       "target": "95",
       "weightage": 10,
-      "status": "Draft",
+      "status": "Approved",
       "isShared": true
+    },
+    {
+      "id": "f802db77-c0a5-4b8d-b17e-a18a8f1a1284",
+      "employeeId": "u1",
+      "thrustArea": "Financial",
+      "title": "Increase Profit",
+      "description": "Increasing companies overall profit margin \n",
+      "uom": "%",
+      "target": "100",
+      "weightage": 40,
+      "atoms": [
+        {
+          "id": "0.49024408449519685",
+          "title": "Phase 1: Research Increase Profit",
+          "isCompleted": false
+        },
+        {
+          "id": "0.5161679738160241",
+          "title": "Phase 2: Draft initial proposal",
+          "isCompleted": false
+        },
+        {
+          "id": "0.8936932283284433",
+          "title": "Phase 3: Execution and Review",
+          "isCompleted": false
+        }
+      ],
+      "status": "Approved",
+      "isShared": false
     }
   ],
   "checkIns": []

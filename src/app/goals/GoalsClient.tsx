@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { saveGoal, submitGoals, saveCheckIn, deleteGoal } from '../actions';
 
 export default function GoalsClient({ currentUser, goals, checkIns, initialTab }: { currentUser: any, goals: any[], checkIns: any[], initialTab: string }) {
   const [tab, setTab] = useState(initialTab);
   const [error, setError] = useState('');
+  const router = useRouter();
   
   const totalWeight = goals.reduce((sum, g) => sum + g.weightage, 0);
   const isLocked = goals.some(g => g.status === 'Submitted' || g.status === 'Approved');
@@ -16,6 +18,7 @@ export default function GoalsClient({ currentUser, goals, checkIns, initialTab }
       setError('');
       await submitGoals(currentUser.id);
       alert('Goals submitted successfully!');
+      router.refresh();
     } catch (err: any) {
       setError(err.message);
     }
@@ -73,6 +76,8 @@ export default function GoalsClient({ currentUser, goals, checkIns, initialTab }
               <div className="badge badge-submitted">Locked (Submitted/Approved)</div>
             )}
           </div>
+          
+          <ActivityHeatmap />
 
           <div className="grid">
             {!isLocked && <GoalForm employeeId={currentUser.id} />}
@@ -86,6 +91,7 @@ export default function GoalsClient({ currentUser, goals, checkIns, initialTab }
                         if (confirm('Are you sure you want to delete this goal?')) {
                           try {
                             await deleteGoal(g.id);
+                            router.refresh();
                           } catch (e: any) { alert(e.message); }
                         }
                       }}
@@ -115,6 +121,20 @@ export default function GoalsClient({ currentUser, goals, checkIns, initialTab }
                     <strong>{g.weightage}%</strong>
                   </div>
                 </div>
+
+                {g.atoms && g.atoms.length > 0 && (
+                  <div className="mt-4">
+                    <strong className="text-secondary" style={{ fontSize: '0.85rem', textTransform: 'uppercase' }}>Atoms (Micro-quests):</strong>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {g.atoms.map((atom: any) => (
+                        <div key={atom.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                           <input type="checkbox" checked={atom.isCompleted} onChange={() => alert('Atom checked! You earned +10 XP!')} />
+                           <span style={{ textDecoration: atom.isCompleted ? 'line-through' : 'none', fontSize: '0.9rem' }}>{atom.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {g.isShared && (
                   <div className="mt-4 text-secondary text-sm" style={{ fontStyle: 'italic' }}>
                     * This is a shared departmental KPI.
@@ -146,6 +166,24 @@ export default function GoalsClient({ currentUser, goals, checkIns, initialTab }
 }
 
 function GoalForm({ employeeId }: { employeeId: string }) {
+  const [atoms, setAtoms] = useState<any[]>([]);
+  const [isAtomizing, setIsAtomizing] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  const handleAtomize = (e: any) => {
+    e.preventDefault();
+    if (!titleRef.current?.value) return alert('Enter a title first to Atomize!');
+    setIsAtomizing(true);
+    setTimeout(() => {
+      setAtoms([
+        { id: Math.random().toString(), title: `Phase 1: Research ${titleRef.current?.value}`, isCompleted: false },
+        { id: Math.random().toString(), title: 'Phase 2: Draft initial proposal', isCompleted: false },
+        { id: Math.random().toString(), title: 'Phase 3: Execution and Review', isCompleted: false },
+      ]);
+      setIsAtomizing(false);
+    }, 1200);
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -157,10 +195,13 @@ function GoalForm({ employeeId }: { employeeId: string }) {
       uom: formData.get('uom') as any,
       target: formData.get('target') as string,
       weightage: parseInt(formData.get('weightage') as string, 10),
+      atoms
     };
     try {
       await saveGoal(data);
       e.target.reset();
+      setAtoms([]);
+      window.location.reload();
     } catch(err: any) {
       alert(err.message);
     }
@@ -182,13 +223,32 @@ function GoalForm({ employeeId }: { employeeId: string }) {
 
       <div className="form-group">
         <label>Goal Title</label>
-        <input type="text" name="title" className="form-control" required />
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input type="text" name="title" className="form-control" ref={titleRef} required />
+          <button onClick={handleAtomize} className="btn btn-secondary" style={{ whiteSpace: 'nowrap', border: '1px solid var(--secondary-color)', color: 'var(--secondary-color)' }}>
+            {isAtomizing ? 'Atomizing...' : '✨ Atomize (AI)'}
+          </button>
+        </div>
       </div>
 
       <div className="form-group">
         <label>Description</label>
         <textarea name="description" className="form-control" rows={2} required></textarea>
       </div>
+
+      {atoms.length > 0 && (
+        <div className="form-group" style={{ background: 'rgba(236, 72, 153, 0.1)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--secondary-color)' }}>
+          <label style={{ color: 'var(--secondary-color)' }}>AI Suggested Atoms (Micro-goals)</label>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {atoms.map(atom => (
+              <li key={atom.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input type="checkbox" checked={atom.isCompleted} readOnly />
+                <span>{atom.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '1rem' }}>
         <div className="form-group" style={{ flex: 1 }}>
@@ -294,6 +354,81 @@ function CheckInForm({ goal, checkIns }: { goal: any, checkIns: any[] }) {
 
         <button type="submit" className="btn btn-secondary mt-4" style={{ width: '100%' }}>Save Check-in</button>
       </form>
+    </div>
+  );
+}
+
+function ActivityHeatmap() {
+  // Generate mock contribution data for the last 4 months
+  const daysInMonth = 30;
+  const numMonths = 4;
+  const numWeeks = Math.ceil((daysInMonth * numMonths) / 7);
+  
+  // Random activity levels 0-4, with higher probability of 0 or 1 for realistic look
+  const getSimulatedLevel = () => {
+    const r = Math.random();
+    if (r < 0.5) return 0;
+    if (r < 0.7) return 1;
+    if (r < 0.85) return 2;
+    if (r < 0.95) return 3;
+    return 4;
+  };
+
+  const weeks = Array.from({ length: numWeeks }, () => 
+    Array.from({ length: 7 }, () => getSimulatedLevel())
+  );
+
+  const getColor = (level: number) => {
+    switch(level) {
+      case 0: return 'var(--background)'; // empty
+      case 1: return 'rgba(16, 185, 129, 0.3)'; // light green
+      case 2: return 'rgba(16, 185, 129, 0.6)';
+      case 3: return 'rgba(16, 185, 129, 0.85)';
+      case 4: return 'var(--success)'; // solid green
+      default: return 'var(--background)';
+    }
+  };
+
+  return (
+    <div className="card mb-4" style={{ display: 'flex', flexDirection: 'column', overflowX: 'auto', background: 'rgba(255,255,255,0.02)' }}>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h3 className="mb-1">Atomic Activity</h3>
+          <p className="text-secondary text-sm m-0">Consistency is key. Track your daily momentum towards your goals.</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-secondary">
+          Less
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[0, 1, 2, 3, 4].map(l => (
+              <div key={l} style={{ width: '12px', height: '12px', backgroundColor: getColor(l), borderRadius: '2px', border: l === 0 ? '1px solid var(--border)' : 'none' }} />
+            ))}
+          </div>
+          More
+        </div>
+      </div>
+      
+      <div style={{ display: 'flex', gap: '4px' }}>
+        {weeks.map((week, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {week.map((dayLvl, j) => (
+              <div 
+                key={j} 
+                style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  backgroundColor: getColor(dayLvl), 
+                  borderRadius: '3px',
+                  border: dayLvl === 0 ? '1px solid var(--border)' : 'none',
+                  transition: 'transform 0.2s'
+                }} 
+                title={`Activity Level: ${dayLvl}`}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
