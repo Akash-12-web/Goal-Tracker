@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { getUsers } from "./actions";
 import ThemeToggle from "./ThemeToggle";
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -80,6 +81,7 @@ export default async function RootLayout({
         <main className="container">
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );
