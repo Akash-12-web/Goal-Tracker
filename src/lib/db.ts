@@ -64,15 +64,33 @@ const defaultData: DatabaseSchema = {
   checkIns: [],
 };
 
+// Vercel Serverless workaround: keep DB in memory because FS is read-only
+let memoryDb: DatabaseSchema | null = null;
+
 export function readDb(): DatabaseSchema {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(defaultData, null, 2), 'utf-8');
-    return defaultData;
+  if (memoryDb) return memoryDb;
+  
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      memoryDb = JSON.parse(raw);
+      return memoryDb as DatabaseSchema;
+    }
+  } catch (e) {
+    console.error("Error reading data.json", e);
   }
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-  return JSON.parse(raw);
+  
+  // Fallback if file doesn't exist or errored (e.g. Vercel)
+  memoryDb = defaultData;
+  return memoryDb;
 }
 
 export function writeDb(data: DatabaseSchema) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  memoryDb = data; // Update in-memory for current lambda execution
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    // Silently ignore in Vercel because file system is read-only
+    console.warn("Could not write to file system (expected in Vercel).");
+  }
 }
