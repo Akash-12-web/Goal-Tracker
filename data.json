@@ -1,0 +1,79 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Alice (Employee)",
+      "role": "Employee",
+      "managerId": "u2"
+    },
+    {
+      "id": "u2",
+      "name": "Bob (Manager)",
+      "role": "Manager",
+      "managerId": "u3"
+    },
+    {
+      "id": "u3",
+      "name": "Charlie (Admin)",
+      "role": "Admin",
+      "managerId": null
+    },
+    {
+      "id": "u4",
+      "name": "Dave (Employee)",
+      "role": "Employee",
+      "managerId": "u2"
+    }
+  ],
+  "goals": [
+    {
+      "id": "2f93c5de-30c2-4912-84ab-0f49d94ceddb",
+      "employeeId": "u1",
+      "thrustArea": "Financial",
+      "title": "Increase Sales",
+      "description": "Boost sales by 1000 units.",
+      "uom": "%",
+      "target": "1000",
+      "weightage": 100,
+      "status": "Draft",
+      "isShared": false
+    },
+    {
+      "id": "168e3459-d9ba-4d12-948e-de567e9502f0",
+      "employeeId": "u1",
+      "thrustArea": "Financial",
+      "title": "Reduce Costs",
+      "description": "Reducing organizational costs.",
+      "uom": "%",
+      "target": "10%",
+      "weightage": 10,
+      "status": "Draft",
+      "isShared": true
+    },
+    {
+      "id": "1c7df4c5-5745-4faf-8477-5af0010c343d",
+      "employeeId": "u1",
+      "thrustArea": "Financial",
+      "title": "Q4 Sales",
+      "description": "Increase sales by 20%",
+      "uom": "%",
+      "target": "2000",
+      "weightage": 100,
+      "status": "Draft",
+      "isShared": false
+    },
+    {
+      "id": "f3876f1a-7f3d-45b4-a3e8-cbbdda8b3cc8",
+      "employeeId": "u1",
+      "thrustArea": "Customer",
+      "title": "Customer Satisfaction",
+      "description": "Maintain high customer satisfaction scores.",
+      "uom": "Numeric",
+      "target": "95",
+      "weightage": 10,
+      "status": "Draft",
+      "isShared": true
+    }
+  ],
+  "checkIns": []
+}
